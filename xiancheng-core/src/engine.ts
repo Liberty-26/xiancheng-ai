@@ -16,6 +16,7 @@ import { MemorySystem } from './memory';
 import { LLMClient } from './llm/client';
 import { DecisionMaker } from './llm/decision-maker';
 import { LlmGoalGenerator } from './llm/goal-generator';
+import { applyRelationshipWitnessEffects, applyRelationshipCouplings } from './relationship';
 
 export class SimulationEngine {
   world: World;
@@ -112,6 +113,29 @@ export class SimulationEngine {
         if (target) applyDriveChanges(target, event);
       }
 
+      // ★ 事件 → 目击者关系变化（actor/target 已在 applyEvent 中处理）
+      const relChanges = applyRelationshipWitnessEffects(event, this.world);
+
+      // ★ 关系变化 → 记忆（重要变化才记录）
+      for (const rc of event.result.relationshipChanges ?? []) {
+        for (const [field, val] of Object.entries(rc.changes)) {
+          if (Math.abs(val as number) >= 10) {
+            this.memorySystem.recordRelationshipChange(
+              rc.fromId, rc.toId, { field, value: val as number }, this.world.tick,
+            );
+          }
+        }
+      }
+      for (const rc of relChanges ?? []) {
+        for (const [field, val] of Object.entries(rc.changes)) {
+          if (Math.abs(val as number) >= 10) {
+            this.memorySystem.recordRelationshipChange(
+              rc.fromId, rc.toId, { field, value: val as number }, this.world.tick,
+            );
+          }
+        }
+      }
+
       // ★ 事件 → 记忆（记忆反馈回路）
       this.memorySystem.recordEvent(event, this.world);
 
@@ -139,6 +163,11 @@ export class SimulationEngine {
 
     // ★ Goal 检查与重评估
     this.goalManager.tick();
+
+    // ★ 关系联动（恐惧→信任、怨恨→好感等）
+    for (const [, c] of this.world.characters) {
+      applyRelationshipCouplings(c);
+    }
 
     // ★ 随机八卦扩散
     randomGossip(this.world, this.knowledge);
