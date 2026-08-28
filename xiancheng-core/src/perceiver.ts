@@ -3,7 +3,7 @@
 // Phase 3：感知 + 信息传播
 // ============================================================
 
-import { Character, World, Perception } from './types';
+import { Character, World, Perception, Fact, RumoredFact } from './types';
 
 export class Perceiver {
   constructor(private world: World) {}
@@ -14,6 +14,7 @@ export class Perceiver {
    */
   perceive(character: Character): Perception {
     const locationId = character.locationId;
+    const knowledge = this.world.knowledge;
 
     // 1. 附近的人（同位置的其他活着的角色）
     const nearbyCharacterIds = Array.from(this.world.characters.values())
@@ -25,11 +26,13 @@ export class Perceiver {
       .filter((e) => e.locationId === locationId && this.world.tick - e.tick <= 3)
       .slice(-5);
 
-    // 3. 已知事实（从知识库）
-    const knownFacts = this.world.knowledge.getKnownFacts(character.id).map((f) => f.id);
+    // 3. 已知事实 ID（从知识库）
+    const knownFacts = Array.from(knowledge.knownBy.entries())
+      .filter(([, knowers]) => knowers.has(character.id))
+      .map(([factId]) => factId);
 
     // 4. 最近听到的谣言
-    const recentRumors = this.world.knowledge.getRumorsFor(character.id).slice(-5);
+    const recentRumors = (knowledge.rumors.get(character.id) ?? []).slice(-5);
 
     return {
       locationId,
@@ -66,9 +69,13 @@ export class Perceiver {
 
     if (perception.knownFacts.length > 0) {
       lines.push('你知道的事情：');
-      const knownContents = world.knowledge.getKnownFactsFromIds(perception.knownFacts);
-      for (const f of knownContents.slice(-5)) {
-        lines.push(`  - ${f.content}`);
+      // 从 facts store 查内容
+      for (const facts of world.knowledge.facts.values()) {
+        for (const f of facts) {
+          if (perception.knownFacts.includes(f.id)) {
+            lines.push(`  - ${f.content}`);
+          }
+        }
       }
     }
 
@@ -82,3 +89,6 @@ export class Perceiver {
     return lines.join('\n');
   }
 }
+
+// 类型 re-export（避免未使用告警）
+export type { Fact, RumoredFact };

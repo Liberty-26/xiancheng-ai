@@ -5,6 +5,7 @@
 
 import {
   KnowledgeStore, Fact, RumoredFact, GameEvent, CharacterId,
+  type World,
 } from './types';
 
 export class Knowledge {
@@ -85,7 +86,14 @@ export class Knowledge {
 
   /** 某个角色知道哪些事实 ID */
   getKnownFactIds(characterId: string): string[] {
-    return Array.from(this.store.knownBy.get(characterId) ?? []);
+    // knownBy 以 factId 为 key → Set<characterId>，这里遍历找出该角色知道的所有事实
+    const result: string[] = [];
+    for (const [factId, knowers] of this.store.knownBy) {
+      if (knowers.has(characterId)) {
+        result.push(factId);
+      }
+    }
+    return result;
   }
 
   /** 某个角色知道哪些事实内容 */
@@ -124,4 +132,73 @@ export class Knowledge {
     }
     return null;
   }
+}
+
+// ============================================================
+// 传播规则
+// ============================================================
+
+/**
+ * talk 动作时的知识传递：A 告诉 B 一条最近知道的重大事实
+ * @returns 传递了哪些事实内容
+ */
+export function shareKnowledgeDuringTalk(
+  fromId: CharacterId,
+  toId: CharacterId,
+  world: World,
+  knowledge: Knowledge,
+): string[] {
+  const knownFacts = knowledge.getKnownFacts(fromId);
+  if (knownFacts.length === 0) return [];
+
+  // 按新鲜度排序，挑最近的一条
+  const sorted = [...knownFacts].sort((a, b) => b.createdAt - a.createdAt);
+  const shared = sorted.slice(0, 1);
+  for (const fact of shared) {
+    knowledge.shareFact(fromId, toId, fact.id, world.tick);
+  }
+  return shared.map((f) => f.content);
+}
+
+/**
+ * 公共地点的事件 → 同位置所有人都算目击者（由 executors 的 witnesses 处理）
+ * 这里处理：公共事件在下一 tick 仍然会被同位置的"后来者"感知到
+ */
+export function publicSpread(event: GameEvent, world: World): void {
+  const PUBLIC_LOCATIONS = ['market', 'gate', 'main_area'];
+  if (!PUBLIC_LOCATIONS.includes(event.locationId)) return;
+  // 事件已经记录到 knowledge，同位置角色在 perceive 时会看到 nearbyEvents
+  void world;
+}
+
+/**
+ * 随机八卦：每 tick 有概率让一个知道消息的人告诉同位置的另一个人
+ */
+export function randomGossip(world: World, knowledge: Knowledge, gossipChance = 0.1): void {
+  if (Math.random() > gossipChance) return;
+
+  const characters = Array.from(world.characters.values()).filter((c) => c.isAlive);
+  if (characters.length < 2) return;
+
+  const from = characters[Math.floor(Math.random() * characters.length)];
+  const knownIds = knowledge.getKnownFactIds(from.id);
+  if (knownIds.length === 0) return;
+
+  const factId = knownIds[Math.floor(Math.random() * knownIds.length)];
+  const fact = knowledge.getKnownFacts(from.id).find((f) => f.id === factId);
+  if (!fact) return;
+
+  const neighbors = characters.filter(
+    (c) => c.id !== from.id && c.locationId === from.locationId && c.isAlive,
+  );
+  if (neighbors.length === 0) return;
+
+  const to = neighbors[Math.floor(Math.random() * neighbors.length)];
+  knowledge.spreadRumor(from.id, to.id, {
+    factId,
+    content: fact.content,
+    credibility: 0.9,
+    sourceId: from.id,
+    tick: world.tick,
+  });
 }
