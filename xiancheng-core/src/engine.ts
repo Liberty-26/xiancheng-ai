@@ -1,6 +1,6 @@
 // ============================================================
 // 清河县 · 模拟引擎
-// Phase 3：接入感知与信息传播
+// Phase 5：接入 LLM 决策
 // ============================================================
 
 import {
@@ -12,6 +12,10 @@ import { Knowledge, shareKnowledgeDuringTalk, randomGossip } from './knowledge';
 import { Perceiver } from './perceiver';
 import { applyDriveChanges, decayDrives } from './drive';
 import { GoalManager } from './goal-manager';
+import { MemorySystem } from './memory';
+import { LLMClient } from './llm/client';
+import { DecisionMaker } from './llm/decision-maker';
+import { LlmGoalGenerator } from './llm/goal-generator';
 
 export class SimulationEngine {
   world: World;
@@ -19,19 +23,34 @@ export class SimulationEngine {
   private knowledge: Knowledge;
   private perceiver: Perceiver;
   private goalManager: GoalManager;
+  private memorySystem: MemorySystem;
+  private llm: LLMClient;
+  private decisionMaker: DecisionMaker;
+  private goalGenerator: LlmGoalGenerator;
   private perceptions = new Map<string, Perception>();
+  /** 是否使用 LLM 决策（有 API key 时自动开启；false 时用测试决策） */
+  private useLlm: boolean;
 
-  constructor() {
+  constructor(options?: { useLlm?: boolean }) {
     this.world = createInitialWorld();
     this.knowledge = new Knowledge();
     this.world.knowledge = this.knowledge.getStore();
     this.perceiver = new Perceiver(this.world);
-    this.goalManager = new GoalManager(this.world);
+    this.memorySystem = new MemorySystem();
+    this.llm = new LLMClient();
+    this.decisionMaker = new DecisionMaker(this.llm, this.memorySystem);
+    this.goalGenerator = new LlmGoalGenerator(this.llm);
+    // 有 API key 且未显式禁用时用 LLM
+    this.useLlm = options?.useLlm ?? this.llm.isConfigured;
+    this.goalManager = new GoalManager(this.world, this.useLlm ? this.goalGenerator : undefined);
   }
+
+  get usesLlm(): boolean { return this.useLlm; }
 
   async start() {
     this.running = true;
-    console.log('=== 清河县模拟器启动 ===\n');
+    console.log('=== 清河县模拟器启动 ===');
+    console.log(`=== 决策模式: ${this.useLlm ? 'LLM（' + (process.env.SIMULATION_MODEL ?? '') + '）' : '测试决策（无 API key）'} ===\n`);
     while (this.running) {
       await this.tickOnce();
       await this.sleep(500); // 每 tick 暂停 500ms 方便观察
@@ -67,8 +86,15 @@ export class SimulationEngine {
         continue;
       }
 
-      // Phase 3/4：用测试决策驱动角色（Phase 5 换成 LLM）
-      const decision = makeTestDecision(character, this.world);
+      // ★ Phase 5：LLM 决策（无 API key 或熔断时回退测试决策）
+      let decision;
+      const useLlmForThis = this.useLlm && !this.decisionMaker.isCircuitOpen;
+      if (useLlmForThis) {
+        const perception = this.perceptions.get(character.id) ?? this.perceiver.perceive(character);
+        decision = await this.decisionMaker.decide(character, this.world, perception);
+      } else {
+        decision = makeTestDecision(character, this.world);
+      }
       if (!decision) continue;
 
       // 执行动作（规则引擎）
@@ -86,6 +112,9 @@ export class SimulationEngine {
         if (target) applyDriveChanges(target, event);
       }
 
+      // ★ 事件 → 记忆（记忆反馈回路）
+      this.memorySystem.recordEvent(event, this.world);
+
       // ★ 信息传播：记录事件到知识库（让行为者+目击者知道）
       this.knowledge.recordEvent(event);
 
@@ -100,9 +129,12 @@ export class SimulationEngine {
         }
       }
 
-      // 打印
+      // 打印（LLM 决策时附带理由；熔断后不再显示误导性信息）
       const status = event.success ? '✅' : '❌';
-      console.log(`  ${status} ${event.description}`);
+      const llmActive = this.useLlm && !this.decisionMaker.isCircuitOpen;
+      const why = llmActive && decision.reason ? ` —— ${decision.reason.slice(0, 50)}` : '';
+      const mono = llmActive && decision.innerMonologue ? ` 💭${decision.innerMonologue.slice(0, 30)}` : '';
+      console.log(`  ${status} ${event.description}${why}${mono}`);
     }
 
     // ★ Goal 检查与重评估

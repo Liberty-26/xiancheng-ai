@@ -6,21 +6,26 @@
 import { Character, World, Goal } from './types';
 import { generateGoalTemplate, checkGoalCompletion, updateGoalProgress, renderGoal } from './goal';
 import { getDriveBaseline } from './drive';
+import { LlmGoalGenerator } from './llm/goal-generator';
 
 export class GoalManager {
   // 记录每个角色上次评估的 tick（避免每 tick 都评估）
   private lastEvaluated = new Map<string, number>();
   private readonly EVAL_INTERVAL = 5;        // 每 5 tick 评估一次
   private readonly DRIVE_CHANGE_THRESHOLD = 0.15;  // 或 drive 变化超过 0.15
+  private llmWarned = false;
 
-  constructor(private world: World) {}
+  constructor(
+    private world: World,
+    private llmGenerator?: LlmGoalGenerator,
+  ) {}
 
   /** 每 tick 调用：检查完成 + 决定是否重评估 */
   tick(): void {
     for (const [, character] of this.world.characters) {
       if (!character.isAlive || character.isDetained) continue;
       this.checkAndUpdateGoal(character);
-      this.maybeReevaluate(character);
+      void this.maybeReevaluate(character);
     }
   }
 
@@ -49,10 +54,10 @@ export class GoalManager {
   }
 
   /** 决定是否重新评估（生成新 Goal） */
-  private maybeReevaluate(character: Character): void {
+  private async maybeReevaluate(character: Character): Promise<void> {
     // 没有目标 → 生成一个
     if (!character.currentGoal) {
-      this.generateNewGoal(character);
+      await this.generateNewGoal(character);
       return;
     }
 
@@ -67,12 +72,29 @@ export class GoalManager {
     );
     if (!driveDrift) return;
 
-    this.generateNewGoal(character);
+    await this.generateNewGoal(character);
   }
 
   /** 生成新 Goal（Phase 4：模板；Phase 5：LLM） */
-  private generateNewGoal(character: Character): void {
-    const newGoal = generateGoalTemplate(character, this.world);
+  private async generateNewGoal(character: Character): Promise<void> {
+    let newGoal: Goal | null = null;
+
+    // 优先用 LLM 生成（带轻量降级：LLM 失败时用模板）
+    if (this.llmGenerator) {
+      try {
+        newGoal = await this.llmGenerator.generate(character, this.world);
+      } catch (e) {
+        // 静默降级到模板（日志只在第一次失败时输出）
+        if (!this.llmWarned) {
+          console.warn(`  [LLM目标生成不可用] ${character.name}: ${e}`);
+          this.llmWarned = true;
+        }
+      }
+    }
+    // LLM 未配置或失败 → 模板兜底
+    if (!newGoal) {
+      newGoal = generateGoalTemplate(character, this.world);
+    }
     if (!newGoal) return;
     newGoal.createdAt = this.world.tick;
 
