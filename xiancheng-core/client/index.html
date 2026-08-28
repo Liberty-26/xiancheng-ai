@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>清河县 · AI 社会模拟器</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>🏯 清河县</h1>
+    <div id="time-display">第 1 天 · 早晨</div>
+    <div class="controls">
+      <button id="btn-tick">▶ 推进一 tick</button>
+      <button id="btn-start">⏵ 自动运行</button>
+      <button id="btn-stop">⏸ 停止</button>
+      <button id="btn-refresh">🔄 刷新</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- 世界状态栏 -->
+    <section id="world-state" class="panel">
+      <h2>世界状态</h2>
+      <div id="world-metrics" class="metrics"></div>
+    </section>
+
+    <!-- 角色网格 -->
+    <section id="characters" class="panel">
+      <h2>角色 <span id="decision-mode" class="badge"></span></h2>
+      <div id="character-grid"></div>
+    </section>
+
+    <!-- 事件流 -->
+    <section id="events" class="panel">
+      <h2>事件流</h2>
+      <div id="event-list"></div>
+    </section>
+  </main>
+
+  <!-- 角色详情弹窗 -->
+  <div id="char-modal" class="modal" hidden>
+    <div class="modal-content">
+      <span id="modal-close" class="close">&times;</span>
+      <div id="modal-body"></div>
+    </div>
+  </div>
+
+  <!-- 玩家操作面板 -->
+  <div id="player-panel" class="player-panel" hidden>
+    <h3>🧍 玩家操作</h3>
+    <div id="player-info"></div>
+    <div id="player-actions"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

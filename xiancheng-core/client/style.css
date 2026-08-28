@@ -1,0 +1,103 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  background: #1a1d2a;
+  color: #e8e8e8;
+  min-height: 100vh;
+}
+header {
+  display: flex; align-items: center; gap: 20px;
+  padding: 16px 24px;
+  background: #252a3d;
+  border-bottom: 2px solid #3a4060;
+  flex-wrap: wrap;
+}
+header h1 { font-size: 22px; color: #ffd166; }
+#time-display { font-size: 14px; color: #8892b0; }
+header button {
+  padding: 8px 16px; border: none; border-radius: 6px;
+  background: #4a5fae; color: white; cursor: pointer; font-size: 14px;
+  transition: background 0.2s;
+}
+header button:hover { background: #5a6fc0; }
+header button:disabled { opacity: 0.5; cursor: not-allowed; }
+main {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  grid-template-rows: auto 1fr;
+  gap: 16px;
+  padding: 16px 24px;
+}
+.panel {
+  background: #232838;
+  border-radius: 10px;
+  padding: 16px;
+  border: 1px solid #333a55;
+}
+.panel h2 { font-size: 16px; color: #8aa2ff; margin-bottom: 12px; }
+.badge {
+  display: inline-block; padding: 2px 8px; border-radius: 10px;
+  font-size: 11px; background: #2ecc71; color: #fff; vertical-align: middle;
+}
+.badge.test { background: #f39c12; }
+.metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.metric { background: #2a3048; padding: 10px; border-radius: 8px; text-align: center; }
+.metric .label { font-size: 11px; color: #8892b0; }
+.metric .value { font-size: 18px; font-weight: bold; color: #ffd166; }
+#character-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  max-height: 500px;
+  overflow-y: auto;
+}
+.char-card {
+  background: #2a3048;
+  border-radius: 10px;
+  padding: 12px;
+  cursor: pointer;
+  border: 1px solid #39405f;
+  transition: all 0.2s;
+}
+.char-card:hover { border-color: #8aa2ff; transform: translateY(-2px); }
+.char-card .name { font-weight: bold; font-size: 16px; }
+.char-card .role { color: #8892b0; font-size: 13px; }
+.char-card .goal { font-size: 12px; color: #ffd166; margin-top: 4px; min-height: 16px; }
+.drive-row { display: flex; align-items: center; gap: 6px; margin: 3px 0; font-size: 12px; }
+.drive-row .tag { width: 32px; color: #8892b0; }
+.drive-row .bar-bg { flex: 1; height: 8px; background: #1a1d2a; border-radius: 4px; overflow: hidden; }
+.drive-row .bar-fill { height: 100%; border-radius: 4px; }
+.wanted { color: #ff6b6b; font-weight: bold; font-size: 12px; }
+#events { grid-column: 1 / -1; max-height: 260px; overflow-y: auto; }
+#event-list { display: flex; flex-direction: column; gap: 4px; }
+.event-item { padding: 6px 10px; background: #2a3048; border-radius: 6px; font-size: 13px; }
+.event-item.success { border-left: 3px solid #2ecc71; }
+.event-item.fail { border-left: 3px solid #ff6b6b; }
+.event-item .tick { color: #8892b0; margin-right: 8px; }
+.modal {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+  display: flex; align-items: center; justify-content: center; z-index: 100;
+}
+.modal[hidden] { display: none; }
+.modal-content {
+  background: #232838; padding: 24px; border-radius: 12px;
+  width: 560px; max-height: 80vh; overflow-y: auto; position: relative;
+}
+.close { position: absolute; top: 12px; right: 16px; cursor: pointer; font-size: 24px; color: #8892b0; }
+.close:hover { color: #fff; }
+.player-panel {
+  position: fixed; right: 16px; bottom: 16px;
+  width: 300px; background: #232838; border-radius: 12px;
+  padding: 16px; border: 1px solid #4a5fae;
+  z-index: 50;
+}
+.player-panel[hidden] { display: none; }
+.player-panel h3 { color: #ffd166; margin-bottom: 10px; }
+.player-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
+.player-actions button {
+  padding: 6px; border-radius: 6px; border: 1px solid #4a5fae;
+  background: #2a3048; color: #e8e8e8; cursor: pointer; font-size: 12px;
+}
+.player-actions button:hover { background: #3a4060; }
+.memories { margin-top: 12px; }
+.memories .mem-item { font-size: 12px; color: #8892b0; margin: 3px 0; }

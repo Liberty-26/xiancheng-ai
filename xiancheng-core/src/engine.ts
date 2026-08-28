@@ -21,10 +21,10 @@ import { applyRelationshipWitnessEffects, applyRelationshipCouplings } from './r
 export class SimulationEngine {
   world: World;
   private running = false;
-  private knowledge: Knowledge;
-  private perceiver: Perceiver;
+  readonly knowledge: Knowledge;
+  readonly perceiver: Perceiver;
   private goalManager: GoalManager;
-  private memorySystem: MemorySystem;
+  readonly memorySystem: MemorySystem;
   private llm: LLMClient;
   private decisionMaker: DecisionMaker;
   private goalGenerator: LlmGoalGenerator;
