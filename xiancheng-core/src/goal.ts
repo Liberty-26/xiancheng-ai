@@ -40,8 +40,9 @@ export function generateGoalTemplate(character: Character, world: World): Goal |
   if (d.revenge > 0.6) {
     const enemy = findEnemy(character);
     if (enemy) {
+      const enemyName = world.characters.get(enemy.id)?.name ?? enemy.id;
       candidates.push(makeGoal(character, {
-        description: `报复${enemy.name}`,
+        description: `报复${enemyName}`,
         condition: { type: 'relationship_le', targetId: enemy.id, field: 'trust', value: -90 },
         priority: 0.8,
         source: 'drive',
@@ -99,16 +100,16 @@ function makeGoal(
 }
 
 /** 找到复仇对象（怨恨最深的人） */
-function findEnemy(character: Character): Character | null {
+function findEnemy(character: Character): { id: string; name: string } | null {
   let worst: { id: string; resentment: number } | null = null;
   for (const [id, rel] of character.relationships) {
     if (!worst || rel.resentment > worst.resentment) {
       worst = { id, resentment: rel.resentment };
     }
   }
-  return worst && worst.resentment > 30
-    ? ({ id: worst.id } as Character)
-    : null;
+  if (!worst || worst.resentment <= 30) return null;
+  // 从 world 中找名字（但这里没有 world 参数，用 name 属性的方式简化）
+  return { id: worst.id, name: worst.id };  // 调用方需覆盖 name
 }
 
 /**
