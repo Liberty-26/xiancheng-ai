@@ -10,12 +10,15 @@ import { createInitialWorld } from './data/world';
 import { execute as executeAction } from './rules';
 import { Knowledge, shareKnowledgeDuringTalk, randomGossip } from './knowledge';
 import { Perceiver } from './perceiver';
+import { applyDriveChanges, decayDrives } from './drive';
+import { GoalManager } from './goal-manager';
 
 export class SimulationEngine {
   world: World;
   private running = false;
   private knowledge: Knowledge;
   private perceiver: Perceiver;
+  private goalManager: GoalManager;
   private perceptions = new Map<string, Perception>();
 
   constructor() {
@@ -23,6 +26,7 @@ export class SimulationEngine {
     this.knowledge = new Knowledge();
     this.world.knowledge = this.knowledge.getStore();
     this.perceiver = new Perceiver(this.world);
+    this.goalManager = new GoalManager(this.world);
   }
 
   async start() {
@@ -47,6 +51,11 @@ export class SimulationEngine {
       `--- 第 ${this.world.tick} tick | 第 ${this.world.time.day} 天 ${timeLabel(this.world.time.timeOfDay)} ---`,
     );
 
+    // ★ 每 tick 先衰减 Drives（向人格基线回归）
+    for (const [, c] of this.world.characters) {
+      decayDrives(c);
+    }
+
     // 收集感知（供决策使用，Phase 5 会用）
     for (const [id, c] of this.world.characters) {
       this.perceptions.set(id, this.perceiver.perceive(c));
@@ -58,7 +67,7 @@ export class SimulationEngine {
         continue;
       }
 
-      // Phase 2/3：用测试决策驱动角色（Phase 5 换成 LLM）
+      // Phase 3/4：用测试决策驱动角色（Phase 5 换成 LLM）
       const decision = makeTestDecision(character, this.world);
       if (!decision) continue;
 
@@ -68,6 +77,14 @@ export class SimulationEngine {
 
       // 应用所有状态变化
       this.applyEvent(event);
+
+      // ★ 事件 → Drive 变化
+      applyDriveChanges(character, event);
+      // 如果目标是另一个角色，也更新目标的 Drive
+      if (event.targetId && event.targetId !== character.id) {
+        const target = this.world.characters.get(event.targetId);
+        if (target) applyDriveChanges(target, event);
+      }
 
       // ★ 信息传播：记录事件到知识库（让行为者+目击者知道）
       this.knowledge.recordEvent(event);
@@ -87,6 +104,9 @@ export class SimulationEngine {
       const status = event.success ? '✅' : '❌';
       console.log(`  ${status} ${event.description}`);
     }
+
+    // ★ Goal 检查与重评估
+    this.goalManager.tick();
 
     // ★ 随机八卦扩散
     randomGossip(this.world, this.knowledge);
