@@ -1,0 +1,14 @@
+{
+  "name": "xiancheng-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/index.ts"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3",
+    "tsx": "^4.21.0",
+    "@types/node": "^22.0.0"
+  }
+}
