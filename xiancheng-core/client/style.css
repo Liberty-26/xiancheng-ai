@@ -101,3 +101,38 @@ main {
 .player-actions button:hover { background: #3a4060; }
 .memories { margin-top: 12px; }
 .memories .mem-item { font-size: 12px; color: #8892b0; margin: 3px 0; }
+
+
+/* ── 地图区 ── */
+.map-panel { grid-column: 1 / -1; }
+#map-container { position: relative; width: 100%; height: 450px; overflow: hidden; border-radius: 8px; background: #1a1d2a; }
+#map-bg { width: 100%; height: 100%; object-fit: cover; }
+#map-overlay { position: absolute; inset: 0; pointer-events: none; }
+.map-loc-label {
+  position: absolute; transform: translate(-50%, -50%);
+  background: rgba(0,0,0,0.65); color: #ffd166; font-size: 12px;
+  padding: 2px 8px; border-radius: 10px; font-weight: bold;
+  border: 1px solid rgba(255,209,102,0.3);
+}
+.map-char {
+  position: absolute; pointer-events: auto; cursor: pointer;
+  width: 44px; height: 52px; transform: translate(-50%, -50%);
+  border-radius: 8px; overflow: hidden;
+  border: 2px solid rgba(255,255,255,0.7);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  transition: transform 0.15s;
+}
+.map-char:hover { transform: translate(-50%, -50%) scale(1.15); border-color: #ffd166; }
+.map-char img { width: 100%; height: 100%; object-fit: cover; }
+
+/* ── 角色卡片（带头像）── */
+#character-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; max-height: 480px; overflow-y: auto; }
+.char-card { background: #2a3048; border-radius: 10px; padding: 12px; cursor: pointer; border: 1px solid #39405f; transition: all 0.2s; }
+.char-card:hover { border-color: #8aa2ff; transform: translateY(-2px); }
+.char-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.char-avatar { width: 44px; height: 52px; border-radius: 8px; object-fit: cover; border: 1px solid rgba(255,255,255,0.2); }
+.char-card .name { font-weight: bold; font-size: 15px; }
+.char-card .role { color: #8892b0; font-size: 12px; }
+.char-card .goal { font-size: 12px; color: #ffd166; margin: 4px 0; min-height: 16px; line-height: 1.35; }
+.char-card .plan { font-size: 11px; color: #8aa2ff; }
+.plan-step { font-size: 12px; color: #8aa2ff; margin: 2px 0; }
