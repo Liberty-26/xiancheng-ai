@@ -43,6 +43,7 @@ export function createInitialWorld(): World {
   return {
     tick: 0,
     time: { day: 1, timeOfDay: 'morning', tick: 0 },
+    clock: { now: 0, scheduled: [] },
     characters,
     state: { ...INITIAL_WORLD_STATE },
     factions: new Map(
@@ -51,5 +52,6 @@ export function createInitialWorld(): World {
     events: [],
     stateDeltas: [],
     knowledge: { knownBy: new Map(), facts: new Map(), rumors: new Map() } as KnowledgeStore,
+    conversations: new Map(),
   };
 }

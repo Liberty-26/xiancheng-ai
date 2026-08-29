@@ -335,7 +335,8 @@ const EXECUTORS: Record<string, (
 
   // ── 移动 ──
   move: (d, actor) => {
-    const locationId = strParam(d, 'locationId', actor.locationId) as LocationId;
+    // v2 兼容：plan 中 move 用 targetId 作为目的地；v1 用 parameters.locationId
+    const locationId = (strParam(d, 'locationId', d.targetId ?? '') || actor.locationId) as LocationId;
     if (locationId === actor.locationId) {
       return { description: `${actor.name}留在原地` };
     }
@@ -359,6 +360,11 @@ const EXECUTORS: Record<string, (
           ]
         : undefined,
     };
+  },
+
+  // ── 等待/休息（v2 新增）──
+  wait: (d, actor) => {
+    return { description: `${actor.name}在原地等待休息` };
   },
 
   // ── 发呆（回退）──
