@@ -103,7 +103,14 @@ app.post('/api/control/stop', (_req, res) => {
 });
 
 // 前端静态
-app.use(express.static(join(__dirname, '..', 'client')));
+// 前端静态文件禁用缓存（开发期，避免浏览器用旧文件）
+app.use(express.static(join(__dirname, '..', 'client'), {
+  etag: false,
+  lastModified: false,
+  setHeaders(res) {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+  },
+}));
 const server = createServer(app);
 const PORT = process.env.PORT ?? 3300;
 server.listen(PORT, () => {

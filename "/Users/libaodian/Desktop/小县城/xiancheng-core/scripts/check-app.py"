@@ -1,0 +1,19 @@
+import sys
+sys.stdout.reconfigure(encoding='utf-8')
+src = open('/Users/libaodian/Desktop/小县城/xiancheng-core/client/app.js', encoding='utf-8').read()
+
+# 搜索 module 专属语法
+for kw in ['import ', 'export ', 'await ', 'top-level']:
+    idx = src.find(kw)
+    if idx >= 0:
+        print(f'找到 「{kw.strip()}」:')
+        print(src[max(0, idx-40):idx+60])
+        print('---')
+    else:
+        print(f'「{kw.strip()}」未找到')
+
+print('总长度:', len(src), '字符')
+print('最后 60 字符:', src[-60:])
+# 开头 3 行
+lines = src.split('\n')[:3]
+print('开头:', lines)

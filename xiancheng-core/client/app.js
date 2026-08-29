@@ -14,6 +14,8 @@ const characterList = $('#character-list');
 const eventList = $('#event-list');
 const decisionMode = $('#decision-mode');
 const mapOverlay = $('#map-overlay');
+const gameMap = document.getElementById('game-map');
+const gameCtx = gameMap ? gameMap.getContext('2d') : null;
 const charModal = $('#char-modal');
 const modalBody = $('#modal-body');
 const playerPanel = $('#player-panel');
@@ -54,10 +56,26 @@ const LOCATION_POS = {
   hideout:   { x: 548, y: 620 },
   gate:      { x: 944, y: 740 },
 };
-const LOCATION_NAMES = {
+const app_LOCATION_NAMES = {
   yamen: '县衙', market: '街市', shop: '商铺',
   warehouse: '仓库', houses: '民宅', hideout: '地下据点', gate: '城门',
 };
+
+
+// ── 头像加载器 ──
+const avatarLoader = {
+  cache: {},
+  get(id) { return this.cache[id] || null; },
+  loadAll() {
+    const ids = ['char_xianling','char_butou','char_shangren','char_shimin_jia','char_shimin_yi','char_xiaotou','char_player'];
+    for (const id of ids) {
+      const img = new Image();
+      img.src = `avatars/${id}.png`;
+      this.cache[id] = img;
+    }
+  },
+};
+avatarLoader.loadAll();
 
 // ── 渲染 ──
 async function refresh() {
@@ -106,7 +124,7 @@ async function refresh() {
           <img class="char-avatar" src="avatars/${c.id}.png" alt="${c.name}">
           <div>
             <div class="name">${c.name} ${c.isDetained ? '🔒' : ''}</div>
-            <div class="role">${c.role} · ${LOCATION_NAMES[c.locationId] || c.locationId}</div>
+            <div class="role">${c.role} · ${app_LOCATION_NAMES[c.locationId] || c.locationId}</div>
           </div>
         </div>
         <div class="goal">🎯 ${c.goal ? c.goal.slice(0, 26) : '（思考中…）'}</div>
@@ -141,44 +159,16 @@ async function refresh() {
     }
   } catch (err) {
     console.error('刷新失败:', err);
+    const dbg = document.getElementById('debug-err');
+    if (dbg) dbg.textContent = '刷新失败: ' + String(err && err.stack || err);
   }
 }
 
-// ── 地图渲染：角色头像标记在对应地点上 ──
+// ── 地图渲染：Canvas 像素风（调用 map-canvas.js）──
 function renderMap(characters) {
-  mapOverlay.innerHTML = '';
-  // 地点标签
-  for (const [locId, pos] of Object.entries(LOCATION_POS)) {
-    const label = document.createElement('div');
-    label.className = 'map-loc-label';
-    label.style.left = pos.x + 'px';
-    label.style.top = pos.y + 'px';
-    label.textContent = LOCATION_NAMES[locId] || locId;
-    mapOverlay.appendChild(label);
-  }
-  // 角色头像（按地点聚合摆放）
-  const byLoc = {};
-  for (const c of characters) {
-    if (!byLoc[c.locationId]) byLoc[c.locationId] = [];
-    byLoc[c.locationId].push(c);
-  }
-  for (const [locId, list] of Object.entries(byLoc)) {
-    const pos = LOCATION_POS[locId];
-    if (!pos) continue;
-    list.forEach((c, i) => {
-      const offset = (i - (list.length - 1) / 2) * 26;
-      const el = document.createElement('div');
-      el.className = 'map-char';
-      el.title = `${c.name}：${c.goal || '思考中'}`;
-      el.style.left = (pos.x + offset - 20) + 'px';
-      el.style.top = (pos.y + 30) + 'px';
-      const img = document.createElement('img');
-      img.src = `avatars/${c.id}.png`;
-      img.alt = c.name;
-      el.appendChild(img);
-      el.onclick = () => openCharModal(c.id);
-      mapOverlay.appendChild(el);
-    });
+  if (gameMap && gameCtx) {
+    drawBaseMapIfNeeded();
+    drawCharactersOnMap(characters, avatarLoader);
   }
 }
 
@@ -210,7 +200,7 @@ async function openCharModal(id) {
       <img src="avatars/${c.id}.png" style="width:60px;height:72px;border-radius:8px">
       <div>
         <h2 style="margin:0">${c.name}（${c.role}）</h2>
-        <p style="color:#8892b0;margin:4px 0 0">📍 ${LOCATION_NAMES[c.locationId] || c.locationId} | 💰 ${c.money}两 | 通缉：${c.wantedLevel}</p>
+        <p style="color:#8892b0;margin:4px 0 0">📍 ${app_LOCATION_NAMES[c.locationId] || c.locationId} | 💰 ${c.money}两 | 通缉：${c.wantedLevel}</p>
       </div>
     </div>
     <p style="color:#ffd166;margin-top:10px">🎯 ${c.goal ? c.goal : '（思考中…）'}</p>
@@ -234,7 +224,7 @@ async function openCharModal(id) {
 function renderPlayerPanel(player) {
   playerInfo.innerHTML = `
     <div style="font-size:13px">
-      💰 ${player.money}两 | 📍 ${LOCATION_NAMES[player.locationId] || player.locationId}
+      💰 ${player.money}两 | 📍 ${app_LOCATION_NAMES[player.locationId] || player.locationId}
       ${player.wantedLevel > 0 ? ` | ⚠️通缉${player.wantedLevel}` : ''}
     </div>
   `;

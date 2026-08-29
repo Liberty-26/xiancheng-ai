@@ -21,9 +21,9 @@
   <main>
     <!-- 地图区 -->
     <section id="map-area" class="panel map-panel">
-      <h2>🗺️ 县城地图</h2>
+      <h2>🗺️ 县城地图（俯视 2D）</h2>
       <div id="map-container">
-        <img id="map-bg" src="map/county-map.png" alt="清河县地图">
+        <canvas id="game-map" width="960" height="600"></canvas>
         <div id="map-overlay"></div>
       </div>
     </section>
@@ -62,6 +62,8 @@
     <div id="player-actions"></div>
   </div>
 
+  <div id="debug-err" style="position:fixed;bottom:0;left:0;right:0;background:#b9800b;color:#fff;padding:8px 12px;font-size:12px;z-index:999;display:none;white-space:pre-wrap;max-height:80px;overflow:auto"></div>
+  <script src="map-canvas.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
