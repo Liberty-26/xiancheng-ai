@@ -53,12 +53,16 @@ async function refresh() {
       apiGet('/api/events?limit=50'),
     ]);
 
-    // 时间
+    // 时间（v2 兼容：有 timeLabel 用 timeLabel，否则用旧的 time 对象）
     const timeMap = {
       morning: '早晨 08:00', afternoon: '下午 14:00',
       evening: '傍晚 20:00', night: '深夜 02:00',
     };
-    timeDisplay.textContent = `第 ${state.time.day} 天 · ${timeMap[state.time.timeOfDay] || state.time.timeOfDay} · tick ${state.tick}`;
+    if (state.timeLabel) {
+      timeDisplay.textContent = state.timeLabel;
+    } else {
+      timeDisplay.textContent = `第 ${state.time.day} 天 · ${timeMap[state.time.timeOfDay] || state.time.timeOfDay} · tick ${state.tick}`;
+    }
 
     // 决策模式
     decisionMode.textContent = state.decisionMode === 'llm' ? 'LLM 驱动' : '测试决策';
@@ -81,10 +85,14 @@ async function refresh() {
       const card = document.createElement('div');
       card.className = 'char-card';
       card.dataset.id = c.id;
+      const planLine = (c.plan || []).length > 0
+        ? `<div class="plan">📋 ${c.plan.slice(0, 4).map(p => p.action).join(' → ')}${c.plan.length > 4 ? '…' : ''}</div>`
+        : '<div class="plan">📋 思考中…</div>';
       card.innerHTML = `
         <div class="name">${c.name} ${c.isDetained ? '🔒' : ''}</div>
         <div class="role">${c.role} · ${c.locationId}</div>
-        <div class="goal">🎯 ${c.currentGoal ? c.currentGoal.description.slice(0, 18) : '无目标'}</div>
+        <div class="goal">🎯 ${c.goal ? c.goal.slice(0, 24) : '（思考中…）'}</div>
+        ${planLine}
         ${c.wantedLevel > 0 ? `<div class="wanted">⚠️ 通缉 ${c.wantedLevel}</div>` : ''}
         <div class="drive">
           ${Object.entries(c.drives).map(([k, v]) => `

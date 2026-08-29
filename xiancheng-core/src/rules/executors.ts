@@ -97,7 +97,10 @@ const EXECUTORS: Record<string, (
   steal: (d, actor, target, world, success) => {
     const amount = numParam(d, 'amount') || 20;
     if (!target) {
-      // 偷地点（如仓库）→ 从该地点的库存偷（简化：从官仓偷）
+      // 无目标偷窃 = 偷自己所在位置。只有仓库有官粮可偷，其他位置没东西可偷
+      if (actor.locationId !== 'warehouse') {
+        return { success: false, description: `${actor.name}在${actor.locationId}没找到值得偷的东西` };
+      }
       const stolen = Math.min(amount, world.state.grainReserve);
       if (!success) {
         return {

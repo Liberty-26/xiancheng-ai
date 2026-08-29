@@ -63,6 +63,18 @@ export class SimulationEngineV2 {
 
   stop() { this.running = false; }
 
+  /** 玩家执行一个动作（公开，供 API 调用） */
+  async executeStepForPlayer(step: PlanStep): Promise<GameEvent> {
+    const player = this.world.characters.get('char_player');
+    if (!player) throw new Error('玩家角色不存在');
+    return this.executeStep(player, step);
+  }
+
+  /** 玩家动作的事件后处理（公开，供 API 调用） */
+  postEventProcessingForPlayer(character: Character, event: GameEvent): void {
+    this.postEventProcessing(character, event);
+  }
+
   /**
    * 推进一个行动（事件队列模式）：
    * 1. 所有 NPC 若有规划未执行完，按 finishAt 排序
@@ -297,11 +309,27 @@ export class SimulationEngineV2 {
     }
   }
 
-  /** 反思：触发 LLM 生成新状态 */
+  /** 各 NPC 上次反思的世界时间（防抖用） */
+  private lastReflectAt = new Map<string, number>();
+  /** 最小反思间隔（世界分钟）：避免同一 NPC 短时间内重复反思 */
+  private readonly MIN_REFLECT_INTERVAL = 90;
+
+  /** 反思：触发 LLM 生成新状态（带防抖：同一 NPC 最短间隔内不重复反思） */
   private async reflectAndReset(character: Character, result?: 'success' | 'fail') {
+    // 防抖：距离上次反思不足最小间隔 → 跳过（保留旧状态，稍后再反思）
+    const lastAt = this.lastReflectAt.get(character.id) ?? 0;
+    if (this.world.clock.now - lastAt < this.MIN_REFLECT_INTERVAL) {
+      // 如果规划已走完但没有新状态，给一个等待步骤避免卡死
+      if (character.npcState && character.npcState.currentStepIndex >= character.npcState.plan.length) {
+        character.npcState.plan.push({ action: 'wait', duration: this.MIN_REFLECT_INTERVAL - (this.world.clock.now - lastAt) });
+      }
+      return;
+    }
+
     const oldState = character.npcState;
     const newState = await this.reflector.reflect(character, this.world, oldState, result);
     character.npcState = newState;
+    this.lastReflectAt.set(character.id, this.world.clock.now);
     if (oldState) {
       console.log(`  [反思] ${character.name}：${result === 'success' ? '目标达成' : result === 'fail' ? '目标受挫' : '规划完成'} → 新目标：${newState.goal.slice(0, 30)}`);
     }
