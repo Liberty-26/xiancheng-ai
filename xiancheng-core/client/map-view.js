@@ -254,7 +254,12 @@ function walkTo(st, fromLocId, targetLocId) {
   const stepMs = 500;
 
   const moveNext = () => {
-    if (idx >= waypoints.length) { st.timer = null; return; }
+    if (idx >= waypoints.length) {
+      st.timer = null;
+      st.el.classList.remove('moving');
+      return;
+    }
+    st.el.classList.add('moving');
     const locId = waypoints[idx];
     const isLast = idx === waypoints.length - 1;
     let pos;

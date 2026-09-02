@@ -119,7 +119,7 @@ async function refresh() {
         : '<div class="plan">📋 思考中…</div>';
       card.innerHTML = `
         <div class="char-head">
-          <img class="char-avatar" src="avatars/${c.id}.png" alt="${c.name}">
+          <img class="char-avatar" src="avatars/${c.id}.png" alt="${c.name}" style="width:40px;height:60px;object-fit:contain;object-position:bottom;border-radius:6px;background:rgba(0,0,0,0.2)">
           <div>
             <div class="name">${c.name} ${c.isDetained ? '🔒' : ''}</div>
             <div class="role">${c.role} · ${app_LOCATION_NAMES[c.locationId] || c.locationId}</div>
@@ -194,7 +194,7 @@ async function openCharModal(id) {
 
   modalBody.innerHTML = `
     <div style="display:flex;align-items:center;gap:12px">
-      <img src="avatars/${c.id}.png" style="width:60px;height:72px;border-radius:8px">
+      <img src="avatars/${c.id}.png" style="width:48px;height:72px;border-radius:8px;object-fit:contain;object-position:bottom;background:rgba(0,0,0,0.2)">
       <div>
         <h2 style="margin:0">${c.name}（${c.role}）</h2>
         <p style="color:#8892b0;margin:4px 0 0">📍 ${app_LOCATION_NAMES[c.locationId] || c.locationId} | 💰 ${c.money}两 | 通缉：${c.wantedLevel}</p>
