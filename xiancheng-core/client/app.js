@@ -14,8 +14,6 @@ const characterList = $('#character-list');
 const eventList = $('#event-list');
 const decisionMode = $('#decision-mode');
 const mapOverlay = $('#map-overlay');
-const gameMap = document.getElementById('game-map');
-const gameCtx = gameMap ? gameMap.getContext('2d') : null;
 const charModal = $('#char-modal');
 const modalBody = $('#modal-body');
 const playerPanel = $('#player-panel');
@@ -108,7 +106,7 @@ async function refresh() {
     `;
 
     // ── 地图：角色位置标注 ──
-    renderMap(characters);
+    updateSceneView(characters);
 
     // ── 角色列表（头像 + 目标 + 规划）──
     characterList.innerHTML = '';
@@ -164,13 +162,12 @@ async function refresh() {
   }
 }
 
-// ── 地图渲染：Canvas 像素风（调用 map-canvas.js）──
+// ── 场景视图渲染（MUD 式）──
 function renderMap(characters) {
-  if (gameMap && gameCtx) {
-    drawBaseMapIfNeeded();
-    drawCharactersOnMap(characters, avatarLoader);
-  }
+  updateSceneView(characters);
 }
+// 初始化场景视图
+setTimeout(() => { if (typeof initSceneView === 'function') initSceneView(); }, 100);
 
 // ── 角色详情弹窗（v2：目标+规划）──
 async function openCharModal(id) {

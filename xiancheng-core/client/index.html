@@ -19,13 +19,11 @@
   </header>
 
   <main>
-    <!-- 地图区 -->
-    <section id="map-area" class="panel map-panel">
-      <h2>🗺️ 县城地图（俯视 2D）</h2>
-      <div id="map-container">
-        <canvas id="game-map" width="960" height="600"></canvas>
-        <div id="map-overlay"></div>
-      </div>
+    <!-- 场景视图区（MUD 式） -->
+    <section id="scene-area" class="panel scene-panel">
+      <h2>🏮 场景</h2>
+      <div id="scene-container"></div>
+      <div id="scene-nav"></div>
     </section>
 
     <!-- 世界状态栏 -->
@@ -63,7 +61,7 @@
   </div>
 
   <div id="debug-err" style="position:fixed;bottom:0;left:0;right:0;background:#b9800b;color:#fff;padding:8px 12px;font-size:12px;z-index:999;display:none;white-space:pre-wrap;max-height:80px;overflow:auto"></div>
-  <script src="map-canvas.js"></script>
+  <script src="scene-view.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
