@@ -106,7 +106,7 @@ async function refresh() {
     `;
 
     // ── 地图：角色位置标注 ──
-    updateSceneView(characters);
+    updateMapView(characters);
 
     // ── 角色列表（头像 + 目标 + 规划）──
     characterList.innerHTML = '';
@@ -164,10 +164,10 @@ async function refresh() {
 
 // ── 场景视图渲染（MUD 式）──
 function renderMap(characters) {
-  updateSceneView(characters);
+  updateMapView(characters);
 }
 // 初始化场景视图
-setTimeout(() => { if (typeof initSceneView === 'function') initSceneView(); }, 100);
+setTimeout(() => { if (typeof initMapView === 'function') initMapView(); }, 100);
 
 // ── 角色详情弹窗（v2：目标+规划）──
 async function openCharModal(id) {
