@@ -175,7 +175,42 @@ main {
   position: absolute; display: flex; flex-direction: column; align-items: center;
   cursor: pointer; z-index: 3; pointer-events: auto;
   transform: translate(-50%, -100%);
+  will-change: left, top;
 }
-.map-char-avatar { width: 40px; height: 48px; border-radius: 6px; object-fit: cover; border: 2px solid rgba(255,255,255,0.6); }
+.map-char-avatar {
+  width: 40px; height: 48px; border-radius: 6px; object-fit: cover;
+  border: 2px solid rgba(255,255,255,0.6);
+  transition: border-color 0.15s, transform 0.15s;
+  background: #2a3048;
+}
 .map-char:hover .map-char-avatar { border-color: #ffd166; transform: scale(1.1); }
-.map-char-name { color: #fff; font-size: 10px; text-shadow: 0 1px 3px #000; margin-top: 1px; white-space: nowrap; }
+.map-char-name {
+  color: #fff; font-size: 10px; text-shadow: 0 1px 3px #000;
+  margin-top: 1px; white-space: nowrap; pointer-events: none;
+  background: rgba(0,0,0,0.35); padding: 0 3px; border-radius: 4px;
+}
+/* 名字气泡（hover 显示角色信息） */
+.map-char-bubble {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(20,24,40,0.96);
+  border: 1px solid #4a5fae;
+  color: #e8e8e8;
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-size: 11px;
+  line-height: 1.45;
+  white-space: nowrap;
+  z-index: 20;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.map-char:hover .map-char-bubble { display: block; }
+/* 行走路径的闪烁点（调试时可开） */
+.map-char.moving .map-char-avatar { border-color: #8aa2ff; }
